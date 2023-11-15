@@ -1,3 +1,5 @@
+import string
+
 from checker import SpellChecker
 from matplotlib import pyplot as plt
 import tkinter as tk
@@ -9,7 +11,7 @@ class Application(tk.Tk):
         self.resizable(False, False)
         self.title("Spell Checker")
         self.geometry("500x200")
-    
+
     def run(self):
         self.mainloop()
 
@@ -22,29 +24,68 @@ class Application(tk.Tk):
 
         self.window = tk.Toplevel(self)
         self.window.withdraw()
-        self.window.overrideredirect(True) 
+        self.window.overrideredirect(True)
         self.text_label = tk.Label(self.window, text="")
         self.text_label.pack()
 
+
     def get_corrections(self):
-        text = [word.lower().strip() for word in self.text_box.get("1.0", tk.END).split()]
+        text = self.text_box.get("1.0", tk.END).split()
         start_index = '1.0'
-        
-        for word in text:
+
+        for original_word in text:
             self.update()
-            start_index = self.text_box.search(word, start_index, stopindex=tk.END)
-            end_index = f"{start_index}+{len(word)}c"
+            # Используйте опцию nocase для поиска без учета регистра
+            start_index = self.text_box.search(original_word, start_index, stopindex=tk.END, nocase=True)
+
+            # Проверка, что start_index не пуст
+            if not start_index:
+                continue
+
+            # Исправление: Преобразование start_index в формат line.column
+            line, column = map(int, start_index.split('.'))
+            start_index = f"{line}.{column}"
+
+            # Удаление знаков препинания с конца слова
+            word_without_punctuation = original_word.rstrip(string.punctuation)
+
+            # Преобразование слова к нижнему регистру
+            word_lower = word_without_punctuation.lower()
+
+            # Проверка, что токен не пустой после удаления знаков препинания
+            if not word_lower:
+                continue
+
+            # Дополнительная логика для слов после приставки "пол-"
+            if word_lower.startswith("пол-"):
+                prefix_length = len("пол-")
+                word_after_prefix = original_word[prefix_length:].rstrip(string.punctuation)
+                word_after_prefix_lower = word_after_prefix.lower()
+
+                # Проверка, что токен не пустой после удаления знаков препинания
+                if not word_after_prefix_lower:
+                    continue
+
+                end_index = f"{start_index}+{prefix_length + len(word_after_prefix)}c"
+            else:
+                end_index = f"{start_index}+{len(original_word)}c"
+
             tags = self.text_box.tag_names(start_index)
             if tags:
                 continue
-            correction = self.check_word(word)
+
+            # Проверка орфографии
+            correction = self.check_word(word_after_prefix_lower) if word_lower.startswith("пол-") else self.check_word(
+                word_lower)
+
             if correction.distance == 1.0:
                 self.text_box.tag_add("green", start_index, end_index)
             else:
                 tag = f"tag_{start_index}_{end_index}"
                 self.text_box.tag_config(tag, background='yellow')
                 self.text_box.tag_add(tag, start_index, end_index)
-                self.text_box.tag_bind(tag, "<Enter>", lambda event, correction=correction: self.show_window(event, f'{correction.word}({correction.distance*100:.2f}%)'))
+                self.text_box.tag_bind(tag, "<Enter>", lambda event, correction=correction: self.show_window(event,
+                                                                                                             f'{correction.word}({correction.distance * 100:.2f}%)'))
                 self.text_box.tag_bind(tag, "<Leave>", self.hide_window)
 
     def show_window(self, event, text):
