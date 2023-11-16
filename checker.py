@@ -1,6 +1,7 @@
 from levenshtein import levenshtein_distance_normalized
 from entry import Entry
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 
 class SpellChecker:
     def __init__(self, sorting_key) -> None:
@@ -12,9 +13,17 @@ class SpellChecker:
             self.counter = Counter(words.word for words in self.data)
             self.total = float(sum(self.counter.values()))
     
+    def calculate_distance(self, entry, target_word):
+        entry.distance = levenshtein_distance_normalized(entry.word, target_word)
+        return entry
+
     def calculate_distances(self, word) -> list[Entry]:
-        for entry in self.data:
-            entry.distance = levenshtein_distance_normalized(entry.word, word)
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(self.calculate_distance, entry, word) for entry in self.data]
+
+        # Collect results
+        self.data = [future.result() for future in futures]
+
         return self.data
     
     def get_correction(self, word) -> Entry: 

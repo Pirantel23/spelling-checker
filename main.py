@@ -1,6 +1,7 @@
 import string
 from checker import SpellChecker
 import re
+from time import perf_counter
 
 
 class SpellCheckerConsole:
@@ -38,39 +39,28 @@ class SpellCheckerConsole:
 
             if not word_lower:
                 continue
-
+            
+            t1 = perf_counter()
             viterby_correction, viterby_probability = self.viterbi_segment(word_lower)
-            print(viterby_correction, viterby_probability)
-            if viterby_probability:
-                self.print_correction(original_word, viterby_correction, viterby_probability * 100)
-
-            elif word_lower.startswith("пол-"):
-                prefix_length = len("пол-")
-                word_after_prefix = word_lower[prefix_length:].rstrip(string.punctuation)
-
-                if not word_after_prefix:
-                    continue
-
-                correction = self.check_word(word_after_prefix)
-                self.print_correction(original_word, f'пол-{correction.word}', correction.distance * 100)
+            correction = self.check_word(word_lower)
+            if correction.distance >= 0.65:
+                self.print_correction(original_word, correction.word, correction.distance * 100, perf_counter() - t1)
             else:
-                correction = self.check_word(word_lower)
-                self.print_correction(original_word, correction.word, correction.distance * 100)
+                self.print_correction(original_word, viterby_correction, viterby_probability * 100, perf_counter() - t1)
 
 
     def check_word(self, word):
         correction = self.checker.get_correction(word)
         return correction
 
-    def print_correction(self, original_word, correction, probability):
+    def print_correction(self, original_word, correction, probability, time):
         print(f"Original Text: {original_word}".ljust(50), end="")
-        if original_word == correction:
-            print("Corrected text: (No corrections needed)")
+        if isinstance(correction, list):
+            print(f"Corrected text: {' '.join(correction)}".ljust(50), end = '')
+            print(f"Found correction in {time}s")
         else:
-            if int(probability) != 0:
-                print(f"Corrected text: {correction} ({probability:.2f}%)")
-            else:
-                print(f"Corrected text: {' '.join(correction)}")
+            print(f"Corrected text: {correction} ({probability:.2f}%)".ljust(50), end = '')
+            print(f"Found correction in {time}s")
 
 
 if __name__ == "__main__":
