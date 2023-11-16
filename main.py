@@ -7,6 +7,9 @@ from time import perf_counter
 class SpellCheckerConsole:
     def __init__(self):
         self.checker = SpellChecker(sorting_key=lambda item: item.distance)
+        print("Welcome to the Spell Checker Console!")
+        print("This program can help you identify and correct spelling errors in your text.")
+        print()
 
     def run(self):
         while True:
