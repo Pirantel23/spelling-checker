@@ -16,10 +16,16 @@ class TestLevenshteinDistanceNormalized(unittest.TestCase):
         self.assertEqual(levenshtein_distance_normalized("самовар", "самоварь"), 0.875)
 
     def test_case_insensitive(self):
-        self.assertEqual(levenshtein_distance_normalized("Самовар", "самовар"), 0.8571428571428572)
+        self.assertEqual(levenshtein_distance_normalized("СамОвар", "самовар"), 1.0)
 
     def test_deletion(self):
         self.assertEqual(levenshtein_distance_normalized("самоварь", "самовар"), 0.875)
+
+    def test_hyphenated_words(self):
+        self.assertEqual(levenshtein_distance_normalized("пол-арбуза", "поларбуза"), 0.9)
+
+    def test_missing_space(self):
+        self.assertEqual(levenshtein_distance_normalized("как у тебя дела", "какутебядела"), 0.8)
 
     def test_substitution(self):
         self.assertEqual(levenshtein_distance_normalized("самовар", "симовар"),  0.8571428571428572)
