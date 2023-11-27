@@ -1,6 +1,7 @@
 import string
 from checker import SpellChecker
 import re
+from entry import Entry
 from time import perf_counter
 
 
@@ -45,27 +46,23 @@ class SpellCheckerConsole:
             
             t1 = perf_counter()
             viterby_correction, viterby_probability = self.viterbi_segment(word_lower)
-            correction = self.check_word(word_lower)
-            if correction.distance >= 0.65:
-                self.print_correction(original_word, correction.word, correction.distance * 100, perf_counter() - t1)
-            else:
-                self.print_correction(original_word, viterby_correction, viterby_probability * 100, perf_counter() - t1)
-
+            corrections = self.check_word(word_lower)
+            self.print_correction(original_word, [correction for correction in corrections] + [' '.join(viterby_correction)], perf_counter() - t1)
 
     def check_word(self, word):
-        correction = self.checker.get_correction(word)
-        return correction
+        corrections = self.checker.get_corrections(word)
+        return corrections
 
-    def print_correction(self, original_word, correction, probability, time):
-        print(f"Original Text: {original_word}".ljust(50), end="")
-        if isinstance(correction, list):
-            print(f"Corrected text: {' '.join(correction)}".ljust(50), end = '')
-            print(f"Found correction in {time}s")
-        else:
-            print(f"Corrected text: {correction} ({probability:.2f}%)".ljust(50), end = '')
-            print(f"Found correction in {time}s")
-
-
+    def print_correction(self, original_word, corrections, time):
+        print(f"Original Text: {original_word}".ljust(30), end="")
+        print("Corrected text: ", end = '')
+        for correction in corrections:
+            if isinstance(correction, Entry):
+                print(f"{correction.word}({correction.distance*100:.2f}%)/", end = '')
+            else:
+                print(f"{correction}".ljust(50), end = '')
+        print(f"Found correction in {time}s")
+                
 if __name__ == "__main__":
     console = SpellCheckerConsole()
     console.run()

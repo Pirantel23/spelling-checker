@@ -21,13 +21,14 @@ class SpellChecker:
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(self.calculate_distance, entry, word) for entry in self.data]
 
-        # Collect results
         self.data = [future.result() for future in futures]
 
         return self.data
     
-    def get_correction(self, word) -> Entry: 
+    def get_corrections(self, word) -> Entry: 
         distance_data = self.calculate_distances(word)
-        correction = max(distance_data, key=self.sorting_key)
-        correction.other = word
-        return correction
+        corrections = sorted(distance_data, key=self.sorting_key, reverse = True)[:5]
+        for correction in corrections:
+            correction.other = word
+            
+        return corrections
