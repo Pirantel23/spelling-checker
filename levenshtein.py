@@ -20,5 +20,4 @@ def levenshtein_distance_normalized(s1: str, s2: str, weights=None) -> int:
                                matrix[i][j - 1] + insertion_cost,
                                matrix[i - 1][j - 1] + substitution_cost)
 
-    normalized = 1 - matrix[-1][-1] / max(len(s1), len(s2))
-    return normalized
+    return matrix[-1][-1]
